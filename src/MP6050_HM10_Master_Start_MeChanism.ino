@@ -788,7 +788,7 @@ void loop() {
             prev_speed=0;
           }
           //======================================================                    
-          if(SumMagAccel==0 && absolute(RoCh)<RoChThreshold && prev_speed<0.15)
+          if(SumMagAccel==0 && absolute(RoCh)<RoChThreshold && prev_speed<0.3)
           // add abs_x<0.8 to prevent wrong speed reset :((
           {
             // we should realize the peak value and do not reset the speed to zero

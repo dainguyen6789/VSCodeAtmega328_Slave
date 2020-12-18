@@ -163,10 +163,10 @@ uint16_t fifoCount;     // count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 long time1=0,time_old,step_start_time,half_step_time,step_peak_time,sample_time;
 unsigned long pilot_send_time,pilot_receive_time;
-float delta_t,SumMagAccel, turnoff_Ratio=0.7;
+float delta_t,SumMagAccel,longterm_sumaccel=0, turnoff_Ratio=0.7;
 //float delta_time;
 int run1=1,j,peak_count;
-
+int longterm_sumaccel_loop_variable=0;
 //============================
 //For Normal and Faster Speed
 //============================
@@ -539,7 +539,7 @@ void setup()
   mpu.setYGyroOffset(-7);
   mpu.setZGyroOffset(-23);
   
-  mpu.setXAccelOffset(-1128);
+  mpu.setXAccelOffset(-1200);
   mpu.setYAccelOffset(-2239);
   mpu.setZAccelOffset(800);
 // Sensor readings with offsets:	-4	-7	16382	0	0	0
@@ -753,12 +753,28 @@ void loop() {
           //==============    RESET SPEED TO ZERO IF NECESSARY ===============//
           //==================================================================//
           SumMagAccel=0;
-          
+          longterm_sumaccel=0;
           for(int ii=0;ii<NumSamplesToSetZero;ii++)
           {
             SumMagAccel+=AVAWorldMagSeries[ii];
           }
-            
+          //=======================================================================================
+
+            longterm_sumaccel+=SumMagAccel;
+            longterm_sumaccel_loop_variable++;
+
+          if(longterm_sumaccel_loop_variable==20 )
+          {
+            if(longterm_sumaccel<=AccelMagThreshold)
+            {
+                spd[1].x=0;
+                spd[1].y=0;
+                spd[1].z=0;
+            }
+
+                longterm_sumaccel=0;
+                longterm_sumaccel_loop_variable=0;
+          }
           //==================================================================//
           // store the speed values to detect the begin of each step 
           // in order to capture half_step_time which will be used for the timing of motor

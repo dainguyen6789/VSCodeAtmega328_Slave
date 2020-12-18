@@ -248,7 +248,7 @@ class Speed
   
 };
   
-Speed spd[2],Spds[4]; // WE NEED TWO SPDs IN ORDER TO CHECK THE RESET CONDITION
+Speed spd[2],Old_Spds[4]; // WE NEED TWO SPDs IN ORDER TO CHECK THE RESET CONDITION
 float prev_speed;//use to store prevous speed value for speed reset to Zero// 
 //void AverageAccel(AvgAccel *AAccel) 
 //{
@@ -758,18 +758,20 @@ void loop() {
           // store the speed values to detect the begin of each step 
           // in order to capture half_step_time which will be used for the timing of motor
           //==================================================================//
-          Spds[0].x=Spds[1].x;
-          Spds[0].y=Spds[1].y;
-          Spds[1].x=Spds[2].x;
-          Spds[1].y=Spds[2].y;
-          Spds[2].x=Spds[3].x;
-          Spds[2].y=Spds[3].y;
-          Spds[3].x=spd[1].x;
-          Spds[3].y=spd[1].y;
+          Old_Spds[0].x=Old_Spds[1].x;
+          Old_Spds[0].y=Old_Spds[1].y;
+          Old_Spds[1].x=Old_Spds[2].x;
+          Old_Spds[1].y=Old_Spds[2].y;
+          Old_Spds[2].x=Old_Spds[3].x;
+          Old_Spds[2].y=Old_Spds[3].y;
+          Old_Spds[3].x=spd[1].x;
+          Old_Spds[3].y=spd[1].y;
           
           // Use the speed_calc to calculate the user speed from the acceleration
           speed_calc(&spd[1],AVAWorld, delta_t);
-          prev_speed=absolute(Spds[3].x) + absolute(Spds[3].y);                     
+          //====================================================
+          prev_speed=absolute(Old_Spds[3].x) + absolute(Old_Spds[3].y); 
+          //====================================================                    
           if(SumMagAccel==0 && absolute(RoCh)<RoChThreshold && prev_speed<0.15)
           // add abs_x<0.8 to prevent wrong speed reset :((
           {
@@ -788,7 +790,7 @@ void loop() {
           //  ==================================================================//
           //  we must change something here to capture the time correctly
           //  one sample =0; then we have 4 samples !=0 => begin the step 
-          if (Spds[0].x==0 && Spds[1].x!=0 && Spds[2].x!=0 && Spds[3].x!=0 & spd[1].x!=0)
+          if (Old_Spds[0].x==0 && Old_Spds[1].x!=0 && Old_Spds[2].x!=0 && Old_Spds[3].x!=0 & spd[1].x!=0)
           {
             SWSerial.print("Here,");
             SWSerial.print(spd[0].x);
@@ -810,7 +812,7 @@ void loop() {
           //==================================================================//    
             
           // peak_speed>0.5 to make sure that is an actual peak .
-          //  absolute(spd[1].x)!=0 to tackle with wrong "reset to zero" when we reset the speed
+          // absolute(spd[1].x)!=0 to tackle with wrong "reset to zero" when we reset the speed
           if (absolute(spd[1].x) < peak_speed && peak_speed>0.5 && absolute(spd[1].x)!=0 ) 
           //the speed value is going down.
           {

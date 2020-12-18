@@ -187,9 +187,6 @@ VectorInt16 aa;         // [x, y, z]            accel sensor measurements
 VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
 VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
   
-float aaWorldX;
-float aaWorldY;
-float aaWorldZ;
 
 float peak_speed,avg_peak_speed,ratio=1,peak_speeds[5],abs_x;// we will monitor 4 previous peak speed values
 //float xx[5]={1,2,3,4,5};
@@ -209,7 +206,7 @@ float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 float vx,vy,vz;
 // packet structure for InvenSense teapot demo
-uint8_t teapotPacket[14] = { '$', 0x02, 0,0, 0,0, 0,0, 0,0, 0x00, 0x00, '\r', '\n' };
+// uint8_t teapotPacket[14] = { '$', 0x02, 0,0, 0,0, 0,0, 0,0, 0x00, 0x00, '\r', '\n' };
 
 int RX_Data_BLE=2;
 
@@ -217,9 +214,15 @@ int RX_Data_BLE=2;
 class AvgAccel
 {
   public:
-  float x=0;
-  float y=0;
-  float z=0;
+  float x;
+  float y;
+  float z;
+  AvgAccel()
+  {
+    x=0;
+    y=0;
+    z=0;
+  };
   float mag()
   {
     return sqrt(pow(x,2)+pow(y,2)+pow(z,2));
@@ -238,9 +241,10 @@ float AVAWorldMagSeries[NumSamplesToSetZero];
 class Speed
 {
   public:
-  float x;
-  float y;
-  float z;
+    float x=0;
+    float y=0;
+    float z=0;
+
   float mag()
   {
     return sqrt(pow(x,2)+pow(y,2)+pow(z,2));
@@ -249,7 +253,8 @@ class Speed
 };
   
 Speed spd[2],Old_Spds[4]; // WE NEED TWO SPDs IN ORDER TO CHECK THE RESET CONDITION
-float prev_speed;//use to store prevous speed value for speed reset to Zero// 
+
+float prev_speed=0;//use to store prevous speed value for speed reset to Zero// 
 //void AverageAccel(AvgAccel *AAccel) 
 //{
 //  
@@ -536,7 +541,7 @@ void setup()
   
   mpu.setXAccelOffset(-1128);
   mpu.setYAccelOffset(-2239);
-  mpu.setZAccelOffset(867);
+  mpu.setZAccelOffset(800);
 // Sensor readings with offsets:	-4	-7	16382	0	0	0
 // Your offsets:	2183	-1557	921	51	15	19
 
@@ -688,7 +693,7 @@ void loop() {
           
           AVAWorld1.x= AVAWorld.x;
           AVAWorld1.y= AVAWorld.x;
-          AVAWorld1.z= AVAWorld.x;
+          AVAWorld1.z= AVAWorld.z;
           
           // current value of  world accel
           
@@ -709,7 +714,7 @@ void loop() {
           if(run1==1)
           {
 
-            if (absolute(AVAWorld.x)<AccelMagThreshold)
+            if (absolute(AVAWorld.x)+absolute(AVAWorld.y)+absolute(AVAWorld.z)<AccelMagThreshold)
             {
               AVAWorldMagSeries[NumSamplesToSetZero-1]=0;
             }
@@ -727,13 +732,13 @@ void loop() {
               AVAWorldMagSeries[ii]= AVAWorldMagSeries[ii+1];
             }
             
-            if (absolute(AVAWorld.x)<AccelMagThreshold)
+            if (absolute(AVAWorld.x)+absolute(AVAWorld.y)+absolute(AVAWorld.z)<AccelMagThreshold)
             {
               AVAWorldMagSeries[NumSamplesToSetZero-1]=0;
             }
             else
             {
-              AVAWorldMagSeries[NumSamplesToSetZero-1]= absolute(AVAWorld.x); 
+              AVAWorldMagSeries[NumSamplesToSetZero-1]= absolute(AVAWorld.x)+absolute(AVAWorld.y)+absolute(AVAWorld.z); 
             }
               
             time_old=time1;
@@ -778,6 +783,10 @@ void loop() {
           speed_calc(&spd[1],AVAWorld, delta_t);
           //======================================================
           prev_speed=absolute(Old_Spds[3].x) + absolute(Old_Spds[3].y)+absolute(Old_Spds[3].z); 
+          if(prev_speed>10)
+          {            
+            prev_speed=0;
+          }
           //======================================================                    
           if(SumMagAccel==0 && absolute(RoCh)<RoChThreshold && prev_speed<0.15)
           // add abs_x<0.8 to prevent wrong speed reset :((

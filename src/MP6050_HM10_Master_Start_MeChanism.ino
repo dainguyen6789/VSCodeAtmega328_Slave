@@ -529,13 +529,13 @@ void setup()
   // supply your own gyro offsets here, scaled for min sensitivity
   // Older and Smaller MUP6050
 
-  // mpu.setXGyroOffset(26);
-  // mpu.setYGyroOffset(-7);
-  // mpu.setZGyroOffset(-23);
+  mpu.setXGyroOffset(26);
+  mpu.setYGyroOffset(-7);
+  mpu.setZGyroOffset(-23);
   
-  // mpu.setXAccelOffset(-1128);
-  // mpu.setYAccelOffset(-2239);
-  // mpu.setZAccelOffset(867);
+  mpu.setXAccelOffset(-1128);
+  mpu.setYAccelOffset(-2239);
+  mpu.setZAccelOffset(867);
 // Sensor readings with offsets:	-4	-7	16382	0	0	0
 // Your offsets:	2183	-1557	921	51	15	19
 
@@ -543,14 +543,14 @@ void setup()
 // Check that your sensor readings are close to 0 0 16384 0 0 0
 // If calibration was succesful write down your offsets so you can set them in your projects using something similar to mpu.setXAccelOffset(youroffset)
 
-// New and Bigger MPU6050 #2
-  mpu.setXGyroOffset(51);
-  mpu.setYGyroOffset(15);
-  mpu.setZGyroOffset(19);
+// // New and Bigger MPU6050 #2
+//   mpu.setXGyroOffset(51);
+//   mpu.setYGyroOffset(15);
+//   mpu.setZGyroOffset(19);
   
-  mpu.setXAccelOffset(2183);
-  mpu.setYAccelOffset(-1557);
-  mpu.setZAccelOffset(921);
+//   mpu.setXAccelOffset(2183);
+//   mpu.setYAccelOffset(-1557);
+//   mpu.setZAccelOffset(921);
   //    make sure it worked (returns 0 if so)
   //
   //    mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_4);

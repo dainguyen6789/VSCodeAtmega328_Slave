@@ -178,7 +178,7 @@ int run1=1,j,peak_count;
 //For Fastest Speed;
 //============================
 float AccelMagThreshold=1,RoCh,RoChThreshold=8;// Rate of Accel change
-const int NumSamplesToSetZero=2;
+const int NumSamplesToSetZero=5;
 
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
@@ -203,7 +203,8 @@ int16_t AccelX[NumOfSamples+1], AccelY[NumOfSamples+1], AccelZ[NumOfSamples+1];
 
 int count=0;            // initial value to count the number of samples to compute average
 
-VectorFloat gravity;    // [x, y, z]            gravity vector, ///////////////////class VectorFloat is defined in helper_3dmath.h
+VectorFloat gravity;    // [x, y, z]            gravity vector, ///////////////////
+// class VectorFloat is defined in helper_3dmath.h
 float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 float vx,vy,vz;
@@ -248,7 +249,7 @@ class Speed
 };
   
 Speed spd[2],Spds[4]; // WE NEED TWO SPDs IN ORDER TO CHECK THE RESET CONDITION
-
+float prev_speed;//use to store prevous speed value for speed reset to Zero// 
 //void AverageAccel(AvgAccel *AAccel) 
 //{
 //  
@@ -541,7 +542,8 @@ void setup()
 
 // Data is printed as: acelX acelY acelZ giroX giroY giroZ
 // Check that your sensor readings are close to 0 0 16384 0 0 0
-// If calibration was succesful write down your offsets so you can set them in your projects using something similar to mpu.setXAccelOffset(youroffset)
+// If calibration was succesful write down your offsets so you can set them in your projects 
+// using something similar to mpu.setXAccelOffset(youroffset)
 
 // // New and Bigger MPU6050 #2
 //   mpu.setXGyroOffset(51);
@@ -610,7 +612,8 @@ void loop() {
     if (!dmpReady) return;
 
     // wait for MPU interrupt or extra packet(s) available
-    // Items that can trigger an interrupt are (1) Clock generator locked to new reference oscillator (used when switching clock 
+    // Items that can trigger an interrupt are (1) Clock generator locked to new reference oscillator 
+    // (used when switching clock 
     // sources); (2) new data is available to be read (from the FIFO and Data registers); (3) accelerometer event
     // interrupts; and (4) the MPU-60X0 did not receive an acknowledge from an auxiliary sensor on the secondary I2C bus
     while (!mpuInterrupt && fifoCount < packetSize) {
@@ -694,7 +697,8 @@ void loop() {
           AVAWorld.z= (float) aaWorld.z*9.81/2048.0;
           
           // Reset the accel to zero if it is small 
-          // Store the "NumSamplesToSetZero" valued=s of acceleration, if they are all zeros, we will reset the speed to zero
+          // Store the "NumSamplesToSetZero" valued=s of acceleration, if they are all zeros, 
+          // we will reset the speed to zero
           // EX: AVAWorldMagSeries[0:1]
           // the "1st sample" (run1==1) will be stored in AVAWorldMagSeries[1];
           
@@ -711,7 +715,7 @@ void loop() {
             }
             else
             {
-              AVAWorldMagSeries[NumSamplesToSetZero-1]= absolute(AVAWorld.x); 
+              AVAWorldMagSeries[NumSamplesToSetZero-1]= absolute(AVAWorld.x)+absolute(AVAWorld.y)+absolute(AVAWorld.z); 
             }
             time1=sample_time;
             run1++;
@@ -719,14 +723,14 @@ void loop() {
           else
           {
             for(int ii=0;ii<NumSamplesToSetZero-1;ii++)
-              {
-                AVAWorldMagSeries[ii]= AVAWorldMagSeries[ii+1];
-              }
+            {
+              AVAWorldMagSeries[ii]= AVAWorldMagSeries[ii+1];
+            }
             
             if (absolute(AVAWorld.x)<AccelMagThreshold)
-              {
-                AVAWorldMagSeries[NumSamplesToSetZero-1]=0;
-              }
+            {
+              AVAWorldMagSeries[NumSamplesToSetZero-1]=0;
+            }
             else
             {
               AVAWorldMagSeries[NumSamplesToSetZero-1]= absolute(AVAWorld.x); 
@@ -738,8 +742,8 @@ void loop() {
           // compute the rate of change (RoCh) of acceleration to tackle with wrong speed reset bug       
           delta_t=(time1-time_old);
           RoCh=(AVAWorld.x-AVAWorld1.x)*1000.0/(float)delta_t;
-//                        SWSerial.print(RoCh);
-//                        SWSerial.print(",");
+          // SWSerial.print(RoCh);
+          // SWSerial.print(",");
           //==================================================================//
           //==============    RESET SPEED TO ZERO IF NECESSARY ===============//
           //==================================================================//
@@ -747,7 +751,7 @@ void loop() {
           
           for(int ii=0;ii<NumSamplesToSetZero;ii++)
           {
-              SumMagAccel+=AVAWorldMagSeries[ii];
+            SumMagAccel+=AVAWorldMagSeries[ii];
           }
             
           //==================================================================//
@@ -765,17 +769,18 @@ void loop() {
           
           // Use the speed_calc to calculate the user speed from the acceleration
           speed_calc(&spd[1],AVAWorld, delta_t);
-                                
-          if(SumMagAccel==0 && absolute(RoCh)<RoChThreshold && absolute(Spds[3].x)<0.1)// add abs_x<0.8 to prevent wrong speed reset :((
+          prev_speed=absolute(Spds[3].x) + absolute(Spds[3].y);                     
+          if(SumMagAccel==0 && absolute(RoCh)<RoChThreshold && prev_speed<0.15)
+          // add abs_x<0.8 to prevent wrong speed reset :((
           {
             // we should realize the peak value and do not reset the speed to zero
-//                          SWSerial.print("here,");
+            // SWSerial.print("here,");
             spd[1].x=0;
             spd[1].y=0;
             spd[1].z=0; 
-//                          AVAWorld.x=0;
-//                          AVAWorld.y=0;
-//                          AVAWorld.z=0; 
+            // AVAWorld.x=0;
+            // AVAWorld.y=0;
+            // AVAWorld.z=0; 
             peak_speed=0; 
           }
           //  ==================================================================//
@@ -794,7 +799,8 @@ void loop() {
 //                      per our test, the peak value of normal walk will never drop below 0.8
           if (abs_x>0.8)
           {
-            peak_speed=max(peak_speed,abs_x); // we have to use our own absolute function because built-in abs() returns int value
+            peak_speed=max(peak_speed,abs_x); // we have to use our own absolute function because built-in abs() 
+            // returns int value
           }
           //==================================================================//
           //        CATCH PEAK SPEED VALUES
@@ -805,57 +811,58 @@ void loop() {
             
           // peak_speed>0.5 to make sure that is an actual peak .
           //  absolute(spd[1].x)!=0 to tackle with wrong "reset to zero" when we reset the speed
-          if (absolute(spd[1].x) < peak_speed && peak_speed>0.5 && absolute(spd[1].x)!=0 ) //the speed value is going down.
+          if (absolute(spd[1].x) < peak_speed && peak_speed>0.5 && absolute(spd[1].x)!=0 ) 
+          //the speed value is going down.
           {
-
-//                            SWSerial.println("T"+half_step_time); 
-              // j variable is used here because the foot speed will continue to  go down after the peak value, we only care about the 1st value
-              if (!j)// j==0
-              {
-                    peak_count++;                               
-                    step_peak_time=sample_time;
-                    half_step_time=step_peak_time-step_start_time;
-                    SWSerial.println("H");
-                    SWSerial.println(half_step_time);
-                    adapttomyself=true;
-                    // transmit TXAdaptedSignal to signal the other foot to adapt his motor speed
-                    Serial.write(TXAdaptedSignal);// TXAdaptedSignal=2, we can choose any encoded value                                  
+            // SWSerial.println("T"+half_step_time); 
+            // j variable is used here because the foot speed will continue to  go down after 
+            // the peak value, we only care about the 1st value
+            if (!j)// j==0
+            {
+                  peak_count++;                               
+                  step_peak_time=sample_time;
+                  half_step_time=step_peak_time-step_start_time;
+                  SWSerial.println("H");
+                  SWSerial.println(half_step_time);
+                  adapttomyself=true;
+                  // transmit TXAdaptedSignal to signal the other foot to adapt his motor speed
+                  Serial.write(TXAdaptedSignal);// TXAdaptedSignal=2, we can choose any encoded value                                  
 //                                  Serial.write(TXAdaptedSignal);// TXAdaptedSignal=2, we can choose any encoded value     
 //                                  Serial.write(TXAdaptedSignal);// TXAdaptedSignal=2, we can choose any encoded value
-                    // update the values of 5 latest peak speeds
-                    peak_speeds[0]=peak_speeds[1];
-                    peak_speeds[1]=peak_speeds[2];
-                    peak_speeds[2]=peak_speeds[3];
-                    peak_speeds[3]=peak_speeds[4]; 
-                    peak_speeds[4]=peak_speed;
-                    
-                    avg_peak_speed=(peak_speeds[0]+peak_speeds[1]+peak_speeds[2]+peak_speeds[3])/4;
-                    
-                    //  tend to reduce the user's speed
-                    ratio=peak_speeds[4]/avg_peak_speed;
-                    SWSerial.println(ratio);
-                    // this is at Master side
-                    if (ratio<0.92 && ratio >=turnoff_Ratio)
-                    {
-                      //send data by bluetooth
-                      Serial.write((byte)0x00);
+                  // update the values of 5 latest peak speeds
+                  peak_speeds[0]=peak_speeds[1];
+                  peak_speeds[1]=peak_speeds[2];
+                  peak_speeds[2]=peak_speeds[3];
+                  peak_speeds[3]=peak_speeds[4]; 
+                  peak_speeds[4]=peak_speed;
+                  
+                  avg_peak_speed=(peak_speeds[0]+peak_speeds[1]+peak_speeds[2]+peak_speeds[3])/4;
+                  
+                  //  tend to reduce the user's speed
+                  ratio=peak_speeds[4]/avg_peak_speed;
+                  SWSerial.println(ratio);
+                  // this is at Master side
+                  if (ratio<0.92 && ratio >=turnoff_Ratio)
+                  {
+                    //send data by bluetooth
+                    Serial.write((byte)0x00);
 //                                    Serial.write((byte)0x00);
 //                                    Serial.write((byte)0x00);
 //                                    SWSerial.println("Se1M");
-                    }
-                    // transmit "1" over BLE to signal the other foot that we are stopping. 
-                    // As a result,  "stopbyOther" flag  of the other foot will be enable.
-                    else if(ratio<turnoff_Ratio && ratio>0)
-                    {
-                      //send data by bluetooth
-                      Serial.write(1);
+                  }
+                  // transmit "1" over BLE to signal the other foot that we are stopping. 
+                  // As a result,  "stopbyOther" flag  of the other foot will be enable.
+                  else if(ratio<turnoff_Ratio && ratio>0)
+                  {
+                    //send data by bluetooth
+                    Serial.write(1);
 //                                    Serial.write(1);
 //                                    Serial.write(1);
 //                                    SWSerial.println("Se2M");
-                    }
+                  }
 
-              }
-              j=1;
+            }
+            j=1;
           }
             // reset variable "j" so that we can capture the next peak foot speed.
           else
@@ -870,15 +877,18 @@ void loop() {
           // FOR the very 1ST FOOT STEP    
           //===================================================================  
           
-          //  Relation between motor speed (duty) and peak foot speed is chosen as duty=8*peak_speed+68     (we can choose other function).
+          //  Relation between motor speed (duty) and peak foot speed is chosen as duty=8*peak_speed+68     
+          // (we can choose other function).
                     
-          //  We will increase the motor speed in the duration of "half_step_time/2" (starting from the moment we capture peak foot speed.
+          //  We will increase the motor speed in the duration of "half_step_time/2" (starting from the moment we 
+          // capture peak foot speed.
           
           //  startup_safe_duty=90 is for the user's security, it will prevent the motor from rotating too fast.
 
           //  MtorIsMoving variable is used to differentiate the 1st step, it could be left foot or right foot.
           
-          if( !MtorIsMoving && peak_speeds[4]>0 && peak_speeds[3]==0  &&  (sample_time-step_peak_time) <= half_step_time/2) // 1st step
+          if( !MtorIsMoving && peak_speeds[4]>0 && peak_speeds[3]==0  
+          &&  (sample_time-step_peak_time) <= half_step_time/2) // 1st step
           {                          
             duty=motor_duty(peak_speeds[4])*(sample_time-step_peak_time)/(half_step_time/2); // the motor speed (duty) will be proportional to the peak foot speed
             // we do not to move too fast at the beginning
@@ -909,9 +919,13 @@ void loop() {
           //==================================================================  //
           
           SWSerial.print(sample_time); 
-          SWSerial.print(",");                         
-//                        SWSerial.print(AVAWorld.x); 
-//                        SWSerial.print(",");             
+          SWSerial.print(","); 
+          //===================================            
+          SWSerial.print(AVAWorld.x); 
+          SWSerial.print(",");  
+          SWSerial.print(AVAWorld.y); 
+          SWSerial.print(","); 
+          //===================================            
           SWSerial.print(spd[1].x);
           SWSerial.print(",");                         
           
@@ -982,11 +996,13 @@ void loop() {
          //   the motor will adapt to the new_duty which is given by new_duty=8*peak_speeds[4]+68 (again, we can choose the function)
          // ========================================
 
-         //   We will change the motor speed in the duration of "half_step_time/2" (starting from the moment we capture new peak foot speed)
+         //   We will change the motor speed in the duration of "half_step_time/2" 
+        //  (starting from the moment we capture new peak foot speed)
          
          //   value 110 is for the user's safety, it will prevent the motor from rotating too fast
          
-         //   "adapttomyself" is a variable used to adapt the motor speed to the its foot speed (peak foot speed from this program, not from bluetooth BLE).
+         //   "adapttomyself" is a variable used to adapt the motor speed to the its foot speed 
+        //  (peak foot speed from this program, not from bluetooth BLE).
          // ========================================
 
     if(millis()-pilot_receive_time<650)
@@ -1033,7 +1049,8 @@ void loop() {
 }
 
 
-//This is HW interrupt of the Serial,  the blue tooth module will be connected to HW Serial to tackle the noise at the BLE receiver.
+//This is HW interrupt of the Serial,  the blue tooth module will be connected to HW Serial 
+// to tackle the noise at the BLE receiver.
 void serialEvent()
 {
         //==================================================================//

@@ -51,16 +51,12 @@ THE SOFTWARE.
 #include "math.h"
 #include <SoftwareSerial.h>
 // #include "MPU6050_6Axis_MotionApps20.h";
-
-
 //#include "MPU6050.h" // not necessary if using MotionApps include file
-
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
-    #include "Wire.h"
+  #include "Wire.h"
 #endif
-
 #include <setPWMFrequency.h>
 #include <HM10MasterSerialInit.h>
 #include <InitMotor.h>
@@ -217,16 +213,18 @@ uint8_t teapotPacket[14] = { '$', 0x02, 0,0, 0,0, 0,0, 0,0, 0x00, 0x00, '\r', '\
 int RX_Data_BLE=2;
 
 
-class AvgAccel{
+class AvgAccel
+{
   public:
   float x=0;
   float y=0;
   float z=0;
-   float mag(){
+  float mag()
+  {
     return sqrt(pow(x,2)+pow(y,2)+pow(z,2));
-    }
+  }
   
-  };
+};
   
 //int const NumOfAccelSampletoZero=3;
 
@@ -236,16 +234,18 @@ float AVAWorldMagSeries[NumSamplesToSetZero];
 
 //AvgAccel aaWorld5[NumOfAccelSampletoZero];
 
-class Speed{
+class Speed
+{
   public:
   float x;
   float y;
   float z;
-  float mag(){
+  float mag()
+  {
     return sqrt(pow(x,2)+pow(y,2)+pow(z,2));
   }
   
-  };
+};
   
 Speed spd[2],Spds[4]; // WE NEED TWO SPDs IN ORDER TO CHECK THE RESET CONDITION
 
@@ -388,15 +388,13 @@ Speed spd[2],Spds[4]; // WE NEED TWO SPDs IN ORDER TO CHECK THE RESET CONDITION
 // ================================================================
 
 void speed_calc(Speed *spd,AvgAccel accel, float delta_t)
- {
+{
   
   spd->x = spd->x + accel.x*delta_t/1000.0;
-  
   spd->y = spd->y + accel.y*delta_t/1000.0;
+  //  spd->z = spd->z + accel.z*delta_t/1000.0;
   
-//  spd->z = spd->z + accel.z*delta_t/1000.0;
-  
- }
+}
 
 
 
@@ -409,9 +407,10 @@ void speed_calc(Speed *spd,AvgAccel accel, float delta_t)
 volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
 
 
-void dmpDataReady() {
-    mpuInterrupt = true;
-    sample_time=millis();
+void dmpDataReady() 
+{
+  mpuInterrupt = true;
+  sample_time=millis();
 }
 
 
@@ -421,12 +420,13 @@ void dmpDataReady() {
 // ===               Compensate Gravity    4G Range             ===
 // ================================================================
 
-uint8_t dmpGetLinearAccel_4G(VectorInt16 *v, VectorInt16 *vRaw, VectorFloat *gravity) {
- // get rid of the gravity component (+1g = +4096 in standard DMP FIFO packet, Range is 4g)
-    v -> x = vRaw -> x - gravity -> x*4096;
-    v -> y = vRaw -> y - gravity -> y*4096;
-    v -> z = vRaw -> z - gravity -> z*4096;
-    return 0;
+uint8_t dmpGetLinearAccel_4G(VectorInt16 *v, VectorInt16 *vRaw, VectorFloat *gravity) 
+{
+  // get rid of the gravity component (+1g = +4096 in standard DMP FIFO packet, Range is 4g)
+  v -> x = vRaw -> x - gravity -> x*4096;
+  v -> y = vRaw -> y - gravity -> y*4096;
+  v -> z = vRaw -> z - gravity -> z*4096;
+  return 0;
 }
 
 
@@ -436,92 +436,89 @@ uint8_t dmpGetLinearAccel_4G(VectorInt16 *v, VectorInt16 *vRaw, VectorFloat *gra
 // ================================================================
 uint8_t dmpGetLinearAccel_8G(VectorInt16 *v, VectorInt16 *vRaw, VectorFloat *gravity) 
 {
- // get rid of the gravity component (+1g = +2048 in standard DMP FIFO packet, Range is 8g)
-    v -> x = vRaw -> x - gravity -> x*2048;
-    v -> y = vRaw -> y - gravity -> y*2048;
-    v -> z = vRaw -> z - gravity -> z*2048;
-    return 0;
+// get rid of the gravity component (+1g = +2048 in standard DMP FIFO packet, Range is 8g)
+  v -> x = vRaw -> x - gravity -> x*2048;
+  v -> y = vRaw -> y - gravity -> y*2048;
+  v -> z = vRaw -> z - gravity -> z*2048;
+  return 0;
 }
 // This function is used to compute the motor's duty (speed) 
 // which will be prportional to peak foot speed
 int motor_duty(float peak_foot_spd)
 {
   return 8*peak_foot_spd+68;
-  }
+}
 
 
 // ================================================================
 // ===                      INITIAL SETUP                       ===
 // ================================================================
 
-void setup() {
-      // ================================================================
-      // ===                      Motor SETUP                         ===
-      // ================================================================
-      // declare pin 10 to be an output:
-      pinMode(10, OUTPUT);
-      setPwmFrequency(10, 8);           //  3921.16 Hz
-    
-    
-       pinMode(9, OUTPUT);
-      setPwmFrequency(9, 8);           //  3921.16 Hz
+void setup() 
+{
+    // ================================================================
+    // ===                      Motor SETUP                         ===
+    // ================================================================
+    // declare pin 10 to be an output:
+  pinMode(10, OUTPUT);
+  setPwmFrequency(10, 8);           //  3921.16 Hz
+  pinMode(9, OUTPUT);
+  setPwmFrequency(9, 8);           //  3921.16 Hz
 
-      
-      InitMotor();
-      
-      HM10MasterSerialInit();
-    
-    // join I2C bus (I2Cdev library doesn't do this automatically)
-    #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
-        Wire.begin();
-        TWBR = 24; // 400kHz I2C clock (200kHz if CPU is 8MHz)
-        Wire.setClock(400000);
-    #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
-        Fastwire::setup(400, true);
-    #endif
+  InitMotor();
+  HM10MasterSerialInit();
+  
+  // join I2C bus (I2Cdev library doesn't do this automatically)
+  #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
+    Wire.begin();
+    TWBR = 24; // 400kHz I2C clock (200kHz if CPU is 8MHz)
+    Wire.setClock(400000);
+  #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
+      Fastwire::setup(400, true);
+  #endif
     // initialize SWSerial communication
     // (115200 chosen because it is required for Teapot Demo output, but it's
     // really up to you depending on your project)
-    SWSerial.begin(115200);
-    while (!SWSerial); // wait for Leonardo enumeration, others continue immediately
+  SWSerial.begin(115200);
+  while (!SWSerial); // wait for Leonardo enumeration, others continue immediately
 
-    // NOTE: 8MHz or slower host processors, like the Teensy @ 3.3v or Ardunio
-    // Pro Mini running at 3.3v, cannot handle this baud rate reliably due to
-    // the baud timing being too misaligned with processor ticks. You must use
-    // 38400 or slower in these cases, or use some kind of external separate
-    // crystal solution for the UART timer.
+  // NOTE: 8MHz or slower host processors, like the Teensy @ 3.3v or Ardunio
+  // Pro Mini running at 3.3v, cannot handle this baud rate reliably due to
+  // the baud timing being too misaligned with processor ticks. You must use
+  // 38400 or slower in these cases, or use some kind of external separate
+  // crystal solution for the UART timer.
 
-    // initialize device
-    SWSerial.println(F("Initializing I2C devices..."));
-    mpu.initialize();
+  // initialize device
+  SWSerial.println(F("Initializing I2C devices..."));
+  mpu.initialize();
 
-    // verify connection
-    SWSerial.println(F("Testing device connections..."));
-    SWSerial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+  // verify connection
+  SWSerial.println(F("Testing device connections..."));
+  SWSerial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
 
-    // wait for ready
-    SWSerial.println(F("\nSend any character to begin DMP programming and demo: "));
-    while (SWSerial.available() && SWSerial.read()); // empty buffer
-    while (!SWSerial.available());                 // wait for data
-    while (SWSerial.available() && SWSerial.read()); // empty buffer again
+  // wait for ready
+  SWSerial.println(F("\nSend any character to begin DMP programming and demo: "));
+  while (SWSerial.available() && SWSerial.read()); // empty buffer
+  while (!SWSerial.available());                 // wait for data
+  while (SWSerial.available() && SWSerial.read()); // empty buffer again
 
-    // load and configure the DMP
-    SWSerial.println(F("Initializing DMP..."));
+  // load and configure the DMP
+  SWSerial.println(F("Initializing DMP..."));
 //            mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_4);
 //            DEBUG_PRINTLN(F("Setting accelerometer sensitivity to +/- 4..."));
 //            I2Cdev::writeByte(0x68, MPU6050_RA_ACCEL_CONFIG, 0x01);
 
-    devStatus = mpu.dmpInitialize();
-    
-    // config 4g sensitivity
-    
-    #ifdef AccelSensitivity_4G
-    mpu.setFullScaleAccelRange(1);  //0 = +/- 2g | 1 = +/- 4g | 2 = +/- 8g | 3 =  +/- 16g 
-    #endif
+  devStatus = mpu.dmpInitialize();
+  
+  // config 4g sensitivity
+  
+  #ifdef AccelSensitivity_4G
+  mpu.setFullScaleAccelRange(1);  //0 = +/- 2g | 1 = +/- 4g | 2 = +/- 8g | 3 =  +/- 16g 
+  #endif
 
-    #ifdef AccelSensitivity_8G
-    mpu.setFullScaleAccelRange(2);  //0 = +/- 2g | 1 = +/- 4g | 2 = +/- 8g | 3 =  +/- 16g 
-    #endif
+  #ifdef AccelSensitivity_8G
+  mpu.setFullScaleAccelRange(2);  //0 = +/- 2g | 1 = +/- 4g | 2 = +/- 8g | 3 =  +/- 16g 
+  #endif
 //Your MPU6050 should be placed in horizontal position, with package letters facing up. 
 //Sensor readings with offsets:  4 1 16374 -1  0 0
 //Your offsets: -2182 -1810 4667  74  -4  -60
@@ -529,66 +526,68 @@ void setup() {
 //Data is printed as: acelX acelY acelZ giroX giroY giroZ
 //Check that your sensor readings are close to 0 0 16384 0 0 0
 
-    // supply your own gyro offsets here, scaled for min sensitivity
-    // Older and Smaller MUP6050
+  // supply your own gyro offsets here, scaled for min sensitivity
+  // Older and Smaller MUP6050
 
-    // mpu.setXGyroOffset(26);
-    // mpu.setYGyroOffset(-7);
-    // mpu.setZGyroOffset(-23);
-    
-    // mpu.setXAccelOffset(-1128);
-    // mpu.setYAccelOffset(-2239);
-    // mpu.setZAccelOffset(867);
+  // mpu.setXGyroOffset(26);
+  // mpu.setYGyroOffset(-7);
+  // mpu.setZGyroOffset(-23);
+  
+  // mpu.setXAccelOffset(-1128);
+  // mpu.setYAccelOffset(-2239);
+  // mpu.setZAccelOffset(867);
 // Sensor readings with offsets:	-4	-7	16382	0	0	0
 // Your offsets:	2183	-1557	921	51	15	19
 
 // Data is printed as: acelX acelY acelZ giroX giroY giroZ
 // Check that your sensor readings are close to 0 0 16384 0 0 0
 // If calibration was succesful write down your offsets so you can set them in your projects using something similar to mpu.setXAccelOffset(youroffset)
+
 // New and Bigger MPU6050 #2
-    mpu.setXGyroOffset(51);
-    mpu.setYGyroOffset(15);
-    mpu.setZGyroOffset(19);
-    
-    mpu.setXAccelOffset(2183);
-    mpu.setYAccelOffset(-1557);
-    mpu.setZAccelOffset(921);
-    //    make sure it worked (returns 0 if so)
-    //
-    //    mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_4);
+  mpu.setXGyroOffset(51);
+  mpu.setYGyroOffset(15);
+  mpu.setZGyroOffset(19);
+  
+  mpu.setXAccelOffset(2183);
+  mpu.setYAccelOffset(-1557);
+  mpu.setZAccelOffset(921);
+  //    make sure it worked (returns 0 if so)
+  //
+  //    mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_4);
 
-    if (devStatus == 0) {
-        // turn on the DMP, now that it's ready
-        SWSerial.println(F("Enabling DMP..."));
-        mpu.setDMPEnabled(true);
-      
-        // enable Arduino interrupt detection
-        SWSerial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
-        attachInterrupt(0, dmpDataReady, RISING);
-        mpuIntStatus = mpu.getIntStatus();
+  if (devStatus == 0) 
+  {
+    // turn on the DMP, now that it's ready
+    SWSerial.println(F("Enabling DMP..."));
+    mpu.setDMPEnabled(true);
+  
+    // enable Arduino interrupt detection
+    SWSerial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
+    attachInterrupt(0, dmpDataReady, RISING);
+    mpuIntStatus = mpu.getIntStatus();
 
-        // set our DMP Ready flag so the main loop() function knows it's okay to use it
-        SWSerial.println(F("DMP ready! Waiting for first interrupt..."));
-        dmpReady = true;
+    // set our DMP Ready flag so the main loop() function knows it's okay to use it
+    SWSerial.println(F("DMP ready! Waiting for first interrupt..."));
+    dmpReady = true;
 
-        // get expected DMP packet size for later comparison
-        packetSize = mpu.dmpGetFIFOPacketSize();
-    } 
-    else 
-    {
-        // ERROR!
-        // 1 = initial memory load failed
-        // 2 = DMP configuration updates failed
-        // (if it's going to break, usually the code will be 1)
-        SWSerial.print(F("DMP Initialization failed (code "));
-        SWSerial.print(devStatus);
-        SWSerial.println(F(")"));
-    }
+    // get expected DMP packet size for later comparison
+    packetSize = mpu.dmpGetFIFOPacketSize();
+  } 
+  else 
+  {
+      // ERROR!
+      // 1 = initial memory load failed
+      // 2 = DMP configuration updates failed
+      // (if it's going to break, usually the code will be 1)
+      SWSerial.print(F("DMP Initialization failed (code "));
+      SWSerial.print(devStatus);
+      SWSerial.println(F(")"));
+  }
 
-    // configure LED for output
-    pinMode(LED_PIN, OUTPUT);
-    
-    SWSerial.println("I am Master!");
+  // configure LED for output
+  pinMode(LED_PIN, OUTPUT);
+  
+  SWSerial.println("I am Master!");
     
     //  =======================================================
     // set the data rate for the SoftwareSWSerial port
@@ -635,7 +634,8 @@ void loop() {
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
     } 
-    else if (mpuIntStatus & 0x02) {
+    else if (mpuIntStatus & 0x02) 
+    {
         // wait for correct available data length, should be a VERY short wait
         while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
 
@@ -705,16 +705,16 @@ void loop() {
                 if(run1==1)
                 {
 
-                    if (absolute(AVAWorld.x)<AccelMagThreshold)
-                    {
-                      AVAWorldMagSeries[NumSamplesToSetZero-1]=0;
-                    }
-                    else
-                    {
-                      AVAWorldMagSeries[NumSamplesToSetZero-1]= absolute(AVAWorld.x); 
-                    }
-                    time1=sample_time;
-                    run1++;
+                  if (absolute(AVAWorld.x)<AccelMagThreshold)
+                  {
+                    AVAWorldMagSeries[NumSamplesToSetZero-1]=0;
+                  }
+                  else
+                  {
+                    AVAWorldMagSeries[NumSamplesToSetZero-1]= absolute(AVAWorld.x); 
+                  }
+                  time1=sample_time;
+                  run1++;
                 }
                 else
                 {
@@ -915,19 +915,7 @@ void loop() {
                         SWSerial.print(",");                         
                         
                         SWSerial.println(spd[1].y);
-//                        SWSerial.print(",");
-//                        SWSerial.print(1].x);
-//                        SWSerial.print(",");
-//                        SWSerial.print(peak_speeds[0]);
-//                        SWSerial.print(",");
-//                        SWSerial.print(peak_speeds[1]);
-//                        SWSerial.print(",");
-//                        SWSerial.print(peak_speeds[2]);
-//                        SWSerial.print(",");
-//                        SWSerial.print(peak_speeds[3]); 
-//                        SWSerial.print(",");
-//                        SWSerial.println(peak_speeds[4]); 
-                                        
+
 
                 //==================================================================//
                 //     CODE FOR SECURITY: turn off motors when lose BLE connection
@@ -956,7 +944,7 @@ void loop() {
         //  This stopping mechanism should be reviewed again
         //  RX_Data_BLE==0: slave ratio <0.9, >turnoff_Ratio
         //  RX_Data_BLE==1: slave ratio <turnoff_Ratio
-        if((ratio<turnoff_Ratio))  // Stop by myself
+        if(ratio<turnoff_Ratio)  // Stop by myself
         {
 //          half_step_time=step_peak_time-step_start_time;
 //          duty=90*peak_speeds[4]*(step_peak_time+half_step_time-sample_time)/(half_step_time); // the motor speed will proportional to the peak foot speed
@@ -986,7 +974,7 @@ void loop() {
               analogWrite(10,RX_Data_BLE);
               analogWrite(9,RX_Data_BLE);
             }
-          }
+        }
 
          // ========================================
          //         SPEED CHANGE BEHAVIOUR. 
@@ -999,46 +987,46 @@ void loop() {
          
          //   "adapttomyself" is a variable used to adapt the motor speed to the its foot speed (peak foot speed from this program, not from bluetooth BLE).
          
-         if(millis()-pilot_receive_time<650)
-         {
+        if(millis()-pilot_receive_time<650)
+        {
           if(adapttomyself && !stopbyOther && ratio >turnoff_Ratio && MtorIsMoving)// MtorIsMoving  is used to isolate this code from 1st foot step
           {
-              new_duty=motor_duty(peak_speeds[4]); 
+            new_duty=motor_duty(peak_speeds[4]); 
+            SWSerial.println(duty_set);
+            
+            //  y decrease/increase the motor's speed, we choose a linear function here.
+            
+            if(duty_set<safe_duty_threshold && (sample_time-step_peak_time) <= half_step_time/2)//decrease upto the "new_duty" value
+            {
+              duty_set=(int)(duty+(new_duty-duty)*(sample_time-step_peak_time)/(half_step_time/2));
+              SWSerial.print("ds");
               SWSerial.println(duty_set);
-              
-              //  y decrease/increase the motor's speed, we choose a linear function here.
-              
-              if(duty_set<safe_duty_threshold && (sample_time-step_peak_time) <= half_step_time/2)//decrease upto the "new_duty" value
-              {
-                duty_set=(int)(duty+(new_duty-duty)*(sample_time-step_peak_time)/(half_step_time/2));
-                SWSerial.print("ds");
-                SWSerial.println(duty_set);
 //                SWSerial.println(new_duty);
 //                SWSerial.println(duty);
 //                SWSerial.println(sample_time);
 //                SWSerial.println(step_peak_time);
 //                SWSerial.println(half_step_time);
-                // signal the Slave to decrease speed (by Bluetooth)
-                duty_set=duty_set>=non_stop_threshold?duty_set:non_stop_threshold;
-                
-                Serial.write(duty_set);
-                // send to signal to ESC motor controller                                         
-                analogWrite(10,duty_set);
-                analogWrite(9,duty_set);
-              }
-              else if ((sample_time-step_peak_time) > half_step_time/2)
-              {
-                duty=duty_set;
-                }
-            }          
-         }
-         else // if lose the BLE connection, we will stop our motor
-         { 
-            SWSerial.print("LST");
-            analogWrite(10,5);
-            analogWrite(9,5);
-            lost_connection=true;
-          }
+              // signal the Slave to decrease speed (by Bluetooth)
+              duty_set=duty_set>=non_stop_threshold?duty_set:non_stop_threshold;
+              
+              Serial.write(duty_set);
+              // send to signal to ESC motor controller                                         
+              analogWrite(10,duty_set);
+              analogWrite(9,duty_set);
+            }
+            else if ((sample_time-step_peak_time) > half_step_time/2)
+            {
+              duty=duty_set;
+            }
+          }          
+        }
+        else // if lose the BLE connection, we will stop our motor
+        { 
+          SWSerial.print("LST");
+          analogWrite(10,5);
+          analogWrite(9,5);
+          lost_connection=true;
+        }
 
 }
 
@@ -1098,21 +1086,3 @@ float absolute(float x)
   else
     return -x;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  

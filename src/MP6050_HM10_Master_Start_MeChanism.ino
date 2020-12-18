@@ -760,17 +760,24 @@ void loop() {
           //==================================================================//
           Old_Spds[0].x=Old_Spds[1].x;
           Old_Spds[0].y=Old_Spds[1].y;
+          Old_Spds[0].z=Old_Spds[1].z;
+
           Old_Spds[1].x=Old_Spds[2].x;
           Old_Spds[1].y=Old_Spds[2].y;
+          Old_Spds[1].z=Old_Spds[2].z;
+
           Old_Spds[2].x=Old_Spds[3].x;
           Old_Spds[2].y=Old_Spds[3].y;
+          Old_Spds[2].z=Old_Spds[3].z;
+
           Old_Spds[3].x=spd[1].x;
           Old_Spds[3].y=spd[1].y;
+          Old_Spds[3].z=spd[1].z;
           
           // Use the speed_calc to calculate the user speed from the acceleration
           speed_calc(&spd[1],AVAWorld, delta_t);
           //======================================================
-          prev_speed=absolute(Old_Spds[3].x) + absolute(Old_Spds[3].y); 
+          prev_speed=absolute(Old_Spds[3].x) + absolute(Old_Spds[3].y)+absolute(Old_Spds[3].z); 
           //======================================================                    
           if(SumMagAccel==0 && absolute(RoCh)<RoChThreshold && prev_speed<0.15)
           // add abs_x<0.8 to prevent wrong speed reset :((
@@ -925,13 +932,16 @@ void loop() {
           //===================================            
           SWSerial.print(AVAWorld.x); 
           SWSerial.print(",");  
-          SWSerial.print(AVAWorld.y); 
-          SWSerial.print(","); 
+          // SWSerial.print(AVAWorld.y); 
+          // SWSerial.print(","); 
+          SWSerial.print(AVAWorld.z); 
+          SWSerial.print(",");           
           //===================================            
           SWSerial.print(spd[1].x);
           SWSerial.print(",");                         
-          
-          SWSerial.println(spd[1].y);
+          // SWSerial.print(spd[1].y);
+          // SWSerial.print(",");           
+          SWSerial.println(spd[1].z);
           //==================================================================//
           //     CODE FOR SECURITY: turn off motors when lose BLE connection
           //==================================================================//

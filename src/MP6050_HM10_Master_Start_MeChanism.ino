@@ -73,7 +73,7 @@ THE SOFTWARE.
 using namespace std;
 #include "MPU6050_Instant.h"
 
-//MPU6050 mpu;
+MPU6050 mpu;
 //MPU6050 mpu1(0x69); // <-- use for AD0 high
 
 SoftwareSerial SWSerial(7, 8); // RX, TX
@@ -530,13 +530,29 @@ void setup() {
 //Check that your sensor readings are close to 0 0 16384 0 0 0
 
     // supply your own gyro offsets here, scaled for min sensitivity
-    mpu.setXGyroOffset(26);
-    mpu.setYGyroOffset(-7);
-    mpu.setZGyroOffset(-23);
+    // Older and Smaller MUP6050
+
+    // mpu.setXGyroOffset(26);
+    // mpu.setYGyroOffset(-7);
+    // mpu.setZGyroOffset(-23);
     
-    mpu.setXAccelOffset(-1128);
-    mpu.setYAccelOffset(-2239);
-    mpu.setZAccelOffset(867);
+    // mpu.setXAccelOffset(-1128);
+    // mpu.setYAccelOffset(-2239);
+    // mpu.setZAccelOffset(867);
+// Sensor readings with offsets:	-4	-7	16382	0	0	0
+// Your offsets:	2183	-1557	921	51	15	19
+
+// Data is printed as: acelX acelY acelZ giroX giroY giroZ
+// Check that your sensor readings are close to 0 0 16384 0 0 0
+// If calibration was succesful write down your offsets so you can set them in your projects using something similar to mpu.setXAccelOffset(youroffset)
+// New and Bigger MPU6050 #2
+    mpu.setXGyroOffset(51);
+    mpu.setYGyroOffset(15);
+    mpu.setZGyroOffset(19);
+    
+    mpu.setXAccelOffset(2183);
+    mpu.setYAccelOffset(-1557);
+    mpu.setZAccelOffset(921);
     //    make sure it worked (returns 0 if so)
     //
     //    mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_4);
@@ -1028,7 +1044,53 @@ void loop() {
 
 
 //This is HW interrupt of the Serial,  the blue tooth module will be connected to HW Serial to tackle the noise at the BLE receiver.
+void serialEvent()
+{
+        //==================================================================//
+        //                    CODE FOR Speed Change with BLE
+        //==================================================================//                   
+        if(Serial.available())
+        {
+          RX_Data_BLE=Serial.read();
+          
+          if(RX_Data_BLE==RXAdaptedSignal) //reveive the signal from other foot that requires me to sync my speed with it
+          {
+            adapttomyself=false;
+            } 
+          else if (RX_Data_BLE==PilotSignal) // this pilot signal is used to check the BLE connection
+          {
+            pilot_receive_time=millis();
+            lost_connection=false;
+            }                     
+          //==================================================================//
+          //                    SPEED  SYNCHRONIZATION WITH THE OTHER SHOE 
+          //==================================================================//         
+          if(millis()>15000 && RX_Data_BLE>turnoff_threshold && RX_Data_BLE<safe_duty_threshold && !adapttomyself && !lost_connection)  // RX_Data_BLE is the duty of the pulse if RX_Data_BLE>turnoff_threshold
+          {
+            SWSerial.print("RSet");// receive duty and set
+            SWSerial.println(RX_Data_BLE);
+            analogWrite(10,RX_Data_BLE);
+            analogWrite(9,RX_Data_BLE) ;
+            MtorIsMoving=true;
+            duty=RX_Data_BLE;
+            duty_set=RX_Data_BLE;   
+            }  
+          if (RX_Data_BLE==1)
+          {
+            stopbyOther=true;
+//            stopbymyself=false;
+            }
+          else if(RX_Data_BLE==0)
+          {
+            stopbyOther=false;
+//            stopbymyself=true;
+            }
+          SWSerial.print("RX");
+          SWSerial.println(RX_Data_BLE);
+        }
+        
 
+  }
 float absolute(float x)
 {
   if (x>0)

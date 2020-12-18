@@ -393,7 +393,7 @@ void speed_calc(Speed *spd,AvgAccel accel, float delta_t)
   
   spd->x = spd->x + accel.x*delta_t/1000.0;
   spd->y = spd->y + accel.y*delta_t/1000.0;
-  //  spd->z = spd->z + accel.z*delta_t/1000.0;
+  spd->z = spd->z + accel.z*delta_t/1000.0;
   
 }
 
@@ -769,9 +769,9 @@ void loop() {
           
           // Use the speed_calc to calculate the user speed from the acceleration
           speed_calc(&spd[1],AVAWorld, delta_t);
-          //====================================================
+          //======================================================
           prev_speed=absolute(Old_Spds[3].x) + absolute(Old_Spds[3].y); 
-          //====================================================                    
+          //======================================================                    
           if(SumMagAccel==0 && absolute(RoCh)<RoChThreshold && prev_speed<0.15)
           // add abs_x<0.8 to prevent wrong speed reset :((
           {
@@ -932,8 +932,6 @@ void loop() {
           SWSerial.print(",");                         
           
           SWSerial.println(spd[1].y);
-
-
           //==================================================================//
           //     CODE FOR SECURITY: turn off motors when lose BLE connection
           //==================================================================//

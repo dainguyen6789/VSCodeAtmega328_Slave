@@ -46,6 +46,7 @@ THE SOFTWARE.
 
 // I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
 // for both classes must be in the include path of your project
+#include <MPU6050_Instant.h>
 
 #include "I2Cdev.h"
 #include "math.h"
@@ -67,7 +68,6 @@ THE SOFTWARE.
 // AD0 low = 0x68 (default for SparkFun breakout and InvenSense evaluation board)
 // AD0 high = 0x69
 using namespace std;
-#include "MPU6050_Instant.h"
 
 MPU6050 mpu;
 //MPU6050 mpu1(0x69); // <-- use for AD0 high

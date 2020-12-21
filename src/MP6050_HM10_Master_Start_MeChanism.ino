@@ -539,7 +539,7 @@ void setup()
   mpu.setYGyroOffset(-7);
   mpu.setZGyroOffset(-23);
   
-  mpu.setXAccelOffset(-1200);
+  mpu.setXAccelOffset(-1150);
   mpu.setYAccelOffset(-2239);
   mpu.setZAccelOffset(800);
 // Sensor readings with offsets:	-4	-7	16382	0	0	0

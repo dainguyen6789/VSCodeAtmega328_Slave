@@ -177,8 +177,8 @@ int longterm_sumaccel_loop_variable=0;
 //============================
 //For Fastest Speed;
 //============================
-float AccelMagThreshold=1.5,RoCh,RoChThreshold=8;// Rate of Accel change
-const int NumSamplesToSetZero=2;
+float AccelMagThreshold=2,RoCh,RoChThreshold=8;// Rate of Accel change
+const int NumSamplesToSetZero=5;
 
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container

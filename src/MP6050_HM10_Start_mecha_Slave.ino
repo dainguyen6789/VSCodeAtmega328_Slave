@@ -161,7 +161,7 @@ unsigned long pilot_send_time, pilot_receive_time;
 float delta_t,SumMagAccel, turnoff_Ratio=0.7;
 //float delta_time;
 int run1=1,j,n_reset=20, count_decreased_step,peak_count;
-int RX_Data_BLE=2;
+int RX_Data_BLE=2,longterm_sumaccel_loop_variable;
 //============================
 //For Normal and Faster Speed
 //============================
@@ -174,7 +174,7 @@ int RX_Data_BLE=2;
 //============================
 float AccelMagThreshold=2,RoCh,RoChThreshold=8;// Rate of Accel change
 const int NumSamplesToSetZero=5;
-
+float longterm_sumaccel=0,prev_speed=0;
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
 
@@ -238,7 +238,7 @@ class Speed{
   
   };
   
-Speed spd[2],Spds[4]; // WE NEED TWO SPDs IN ORDER TO CHECK THE RESET CONDITION
+Speed spd[2],Old_Spds[4]; // WE NEED TWO SPDs IN ORDER TO CHECK THE RESET CONDITION
 
 //void AverageAccel(AvgAccel *AAccel) 
 //{
@@ -475,18 +475,10 @@ void setPwmFrequency(int pin, int divisor) {
 }
 
 
-float absolute(float x)
-{
-  if (x>0)
-    return x;
-  else
-    return -x;
-}
-
 int motor_duty(float peak_foot_spd)
 {
   return 8*peak_foot_spd+68;
-  }
+}
 
 
 // ================================================================
@@ -604,41 +596,42 @@ Data is printed as: acelX acelY acelZ giroX giroY giroZ
     mpu.setXGyroOffset(28);
     mpu.setYGyroOffset(-11);
     mpu.setZGyroOffset(-19);
-    
-    mpu.setZAccelOffset(864); //  factory default for my test chip
-    //    mpu.setZAccelOffset(417); 
-    //    mpu.setXAccelOffset(-1036);
-    //    mpu.setYAccelOffset(-2044);
+
+    mpu.setXAccelOffset(-1036);
+    mpu.setYAccelOffset(-2044);
+    mpu.setZAccelOffset(417); 
+
     //    make sure it worked (returns 0 if so)
     //
     //    mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_4);
 
-    if (devStatus == 0) {
-        // turn on the DMP, now that it's ready
-        SWSerial.println(F("Enabling DMP..."));
-        mpu.setDMPEnabled(true);
-      
-        // enable Arduino interrupt detection
-        SWSerial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
-        attachInterrupt(0, dmpDataReady, RISING);
-        mpuIntStatus = mpu.getIntStatus();
+    if (devStatus == 0) 
+    {
+      // turn on the DMP, now that it's ready
+      SWSerial.println(F("Enabling DMP..."));
+      mpu.setDMPEnabled(true);
+    
+      // enable Arduino interrupt detection
+      SWSerial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
+      attachInterrupt(0, dmpDataReady, RISING);
+      mpuIntStatus = mpu.getIntStatus();
 
-        // set our DMP Ready flag so the main loop() function knows it's okay to use it
-        SWSerial.println(F("DMP ready! Waiting for first interrupt..."));
-        dmpReady = true;
+      // set our DMP Ready flag so the main loop() function knows it's okay to use it
+      SWSerial.println(F("DMP ready! Waiting for first interrupt..."));
+      dmpReady = true;
 
-        // get expected DMP packet size for later comparison
-        packetSize = mpu.dmpGetFIFOPacketSize();
+      // get expected DMP packet size for later comparison
+      packetSize = mpu.dmpGetFIFOPacketSize();
     } 
     else 
     {
-        // ERROR!
-        // 1 = initial memory load failed
-        // 2 = DMP configuration updates failed
-        // (if it's going to break, usually the code will be 1)
-        SWSerial.print(F("DMP Initialization failed (code "));
-        SWSerial.print(devStatus);
-        SWSerial.println(F(")"));
+      // ERROR!
+      // 1 = initial memory load failed
+      // 2 = DMP configuration updates failed
+      // (if it's going to break, usually the code will be 1)
+      SWSerial.print(F("DMP Initialization failed (code "));
+      SWSerial.print(devStatus);
+      SWSerial.println(F(")"));
     }
 
     // configure LED for output
@@ -738,9 +731,9 @@ void loop() {
         
         mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
         
-        AVAWorld1.x= AVAWorld.x;
-        AVAWorld1.y= AVAWorld.x;
-        AVAWorld1.z= AVAWorld.x;
+        // AVAWorld1.x= AVAWorld.x;
+        // AVAWorld1.y= AVAWorld.x;
+        // AVAWorld1.z= AVAWorld.x;
         
         // current value of accel
         
@@ -750,28 +743,17 @@ void loop() {
 
         if(run1==1)
         {
-          // analogWrite(10,70);
-          // analogWrite(9,70);  
-          // delay(250);                  
-          // analogWrite(10,75);
-          // analogWrite(9,75);   
-          // delay(500);                    
-          // analogWrite(10,80);
-          // analogWrite(9,80);
-          // delay(250);   
-          // analogWrite(10,90);
-          // analogWrite(9,90);
-          if (absolute(AVAWorld.x)<AccelMagThreshold)
+          if (absolute(AVAWorld.x)+absolute(AVAWorld.y)+absolute(AVAWorld.z)<AccelMagThreshold)
           {
             AVAWorldMagSeries[NumSamplesToSetZero-1]=0;
           }
           else
           {
-            AVAWorldMagSeries[NumSamplesToSetZero-1]= absolute(AVAWorld.x); 
+            AVAWorldMagSeries[NumSamplesToSetZero-1]= absolute(AVAWorld.x)+absolute(AVAWorld.y)+absolute(AVAWorld.z); 
           }
           time1=sample_time;
           run1++;
-          }
+        }
         else
         {
           for(int ii=0;ii<NumSamplesToSetZero-1;ii++)
@@ -779,9 +761,12 @@ void loop() {
             AVAWorldMagSeries[ii]= AVAWorldMagSeries[ii+1];
           }
               
-          if (absolute(AVAWorld.x)<AccelMagThreshold)
+          if (absolute(AVAWorld.x)+absolute(AVAWorld.y)+absolute(AVAWorld.z)<AccelMagThreshold)
           {
             AVAWorldMagSeries[NumSamplesToSetZero-1]=0;
+            AVAWorld.x=0;
+            AVAWorld.y=0;
+            AVAWorld.z=0;
           }
           else
           {
@@ -797,32 +782,63 @@ void loop() {
         //==============    RESET SPEED TO ZERO IF NECESSARY ===============//
         //==================================================================//
         SumMagAccel=0;
-        
-
+        longterm_sumaccel=0;
         for(int ii=0;ii<NumSamplesToSetZero;ii++)
         {
           SumMagAccel+=AVAWorldMagSeries[ii];
         }
 
-        Spds[0].x=Spds[1].x;
-        Spds[0].y=Spds[1].y;
-        Spds[1].x=Spds[2].x;
-        Spds[1].y=Spds[2].y;
-        Spds[2].x=Spds[3].x;
-        Spds[2].y=Spds[3].y;
-        Spds[3].x=spd[1].x;
-        Spds[3].y=spd[1].y;
-        speed_calc(&spd[1],AVAWorld, delta_t);                  
-        if(SumMagAccel==0 && absolute(RoCh)<RoChThreshold)
-        //if(SumMagAccel==0)
+        //=======================================================================================
+
+        longterm_sumaccel+=SumMagAccel;
+        longterm_sumaccel_loop_variable++;
+
+        if(longterm_sumaccel_loop_variable==20 )
         {
+          if(longterm_sumaccel<=AccelMagThreshold)
+          {
+              spd[1].x=0;
+              spd[1].y=0;
+              spd[1].z=0;
+          }
+
+              longterm_sumaccel=0;
+              longterm_sumaccel_loop_variable=0;
+        }
+
+        Old_Spds[0].x=Old_Spds[1].x;
+        Old_Spds[0].y=Old_Spds[1].y;
+        Old_Spds[0].z=Old_Spds[1].z;
+
+        Old_Spds[1].x=Old_Spds[2].x;
+        Old_Spds[1].y=Old_Spds[2].y;
+        Old_Spds[0].z=Old_Spds[1].z;
+
+        Old_Spds[2].x=Old_Spds[3].x;
+        Old_Spds[2].y=Old_Spds[3].y;
+        Old_Spds[2].z=Old_Spds[3].z;
+
+        Old_Spds[3].x=spd[1].x;
+        Old_Spds[3].y=spd[1].y;
+        speed_calc(&spd[1],AVAWorld, delta_t);                  
+        prev_speed=absolute(Old_Spds[3].x) + absolute(Old_Spds[3].y)+absolute(Old_Spds[3].z); 
+        if(prev_speed>10)
+        {            
+          prev_speed=0;
+        }
+        //======================================================                    
+        if(SumMagAccel==0 && absolute(RoCh)<RoChThreshold && prev_speed<0.3)
+        // add abs_x<0.8 to prevent wrong speed reset :((
+        {
+          // we should realize the peak value and do not reset the speed to zero
+          // SWSerial.print("here,");
           spd[1].x=0;
           spd[1].y=0;
-          spd[1].z=0;   
+          spd[1].z=0; 
           // AVAWorld.x=0;
           // AVAWorld.y=0;
           // AVAWorld.z=0; 
-          peak_speed=0;                       
+          peak_speed=0; 
         }
                   
         //  ==================================================================//
@@ -830,13 +846,13 @@ void loop() {
         //  ==================================================================//
         //  we must change something here to capture the time correctly
         //  one sample =0; then we have 4 samples !=0 => begin the step 
-        if (Spds[0].x==0 && Spds[1].x!=0 && Spds[2].x!=0 && Spds[3].x!=0 & spd[1].x!=0)
+        if (Old_Spds[0].x==0 && Old_Spds[1].x!=0 && Old_Spds[2].x!=0 && Old_Spds[3].x!=0 & spd[1].x!=0)
         {
 //                          SWSerial.print("Here,");
           SWSerial.print(spd[0].x);
           SWSerial.println(spd[1].x);
           step_start_time=sample_time;
-          }
+        }
 //
         if (absolute(spd[1].x)>0.8)                    // this condition to prevent the wrong peak value after reset peak_speed
         peak_speed=max(peak_speed,absolute(spd[1].x)); // we have to use our own absolute function because built-in abs() returns int value
@@ -981,41 +997,41 @@ void loop() {
         //  RX_Data_BLE==0: slave ratio <0.9, >turnoff_Ratio
         //  RX_Data_BLE==1: slave ratio <turnoff_Ratio
     if((ratio<turnoff_Ratio))  // Stop by myself
-        {
+    {
 //          half_step_time=step_peak_time-step_start_time;
 //          duty=90*peak_speeds[4]*(step_peak_time+half_step_time-sample_time)/(half_step_time); // the motor speed will proportional to the peak foot speed
-          if(step_peak_time+half_step_time>sample_time)
-          {
-            gradualStopDuty=duty*(step_peak_time+half_step_time-sample_time)/(half_step_time);
-          }
-          SWSerial.print("STbymyself");
-          if (gradualStopDuty>turnoff_threshold)
-          {
-            analogWrite(10,gradualStopDuty);
-            analogWrite(9,gradualStopDuty);
-            //================================
-            SWSerial.println(gradualStopDuty);
-            Serial.write(gradualStopDuty);// signal the Slave to stop
-            
-          }
-        }
+      if(step_peak_time+half_step_time>sample_time)
+      {
+        gradualStopDuty=duty*(step_peak_time+half_step_time-sample_time)/(half_step_time);
+      }
+      SWSerial.print("STbymyself");
+      if (gradualStopDuty>turnoff_threshold)
+      {
+        analogWrite(10,gradualStopDuty);
+        analogWrite(9,gradualStopDuty);
+        //================================
+        SWSerial.println(gradualStopDuty);
+        Serial.write(gradualStopDuty);// signal the Slave to stop
+        
+      }
+    }
     else if(stopbyOther)// STOP BY OTHER foot because RX_Data_BLE==1 <=> Master ratio <turnoff_Ratio
-        {
-            SWSerial.print("STbyother");
-            if (RX_Data_BLE>turnoff_threshold)
-            {
-              SWSerial.println((int)RX_Data_BLE);       
-              analogWrite(10,RX_Data_BLE);
-              analogWrite(9,RX_Data_BLE);
-            }
-          }        
+    {
+      SWSerial.print("STbyother");
+      if (RX_Data_BLE>turnoff_threshold)
+      {
+        SWSerial.println((int)RX_Data_BLE);       
+        analogWrite(10,RX_Data_BLE);
+        analogWrite(9,RX_Data_BLE);
+      }
+    }        
          //===================================================================================
          ///  ADAPT THE SPEED BY MYSELF and SEND THE SIGNAL TO OTHER MODULE
          //=================================================================================== 
     if(millis()-pilot_receive_time<650)
     {
-    if(adapttomyself && !stopbyOther && ratio >turnoff_Ratio && MtorIsMoving) // MtorIsMoving is used to isolate this code from 1st foot step
-    {
+      if(adapttomyself && !stopbyOther && ratio >turnoff_Ratio && MtorIsMoving) // MtorIsMoving is used to isolate this code from 1st foot step
+      {
         new_duty=motor_duty(peak_speeds[4]);
         SWSerial.println(duty_set);
         // Decrease/increase the speed
@@ -1036,7 +1052,7 @@ void loop() {
         else if ((sample_time-step_peak_time) > half_step_time/2)
         {
           duty=duty_set;
-          }
+        }
       }          
     }
     else // If lose the connection, we will stop our motor
@@ -1058,54 +1074,56 @@ void serialEvent()
         //==================================================================//            
         // if there is any signal from Master module, that means slave has to react 
   if(Serial.available())
-        {
-          RX_Data_BLE=Serial.read();
-          
-          if(RX_Data_BLE==RXAdaptedSignal) //reveive the signal from other foot that requires me to sync my speed with it
-          {
-            adapttomyself=false;
-            }
-          else if (RX_Data_BLE==PilotSignal)
-          {
-            pilot_receive_time=millis(); 
-            lost_connection=false; 
-            }    
-            
-          //==================================================================//
-          //                    SPEED SYNCHRONIZARION  
-          //==================================================================//
+  {
+    RX_Data_BLE=Serial.read();
+    
+    if(RX_Data_BLE==RXAdaptedSignal) //reveive the signal from other foot that requires me to sync my speed with it
+    {
+      adapttomyself=false;
+    }
+    else if (RX_Data_BLE==PilotSignal)
+    {
+      pilot_receive_time=millis(); 
+      lost_connection=false; 
+    }    
+      
+    //==================================================================//
+    //                    SPEED SYNCHRONIZARION  
+    //==================================================================//
 
-          if(millis()>15000 && RX_Data_BLE>30 && RX_Data_BLE<safe_duty_threshold && !adapttomyself && !lost_connection) // RX_Data_BLE is the duty of the pulse if RX_Data_BLE>30
-          {
-            SWSerial.print("RSet");// receive duty
-            SWSerial.println(RX_Data_BLE);
-            
-            analogWrite(10,RX_Data_BLE);
-            analogWrite(9,RX_Data_BLE) ;
-            
-            MtorIsMoving=true;
-            duty=RX_Data_BLE;
-            duty_set=RX_Data_BLE;
-            }  
-          if (RX_Data_BLE==1)
-          {
-            stopbyOther=true;
+    if(millis()>15000 && RX_Data_BLE>30 && RX_Data_BLE<safe_duty_threshold && !adapttomyself && !lost_connection) // RX_Data_BLE is the duty of the pulse if RX_Data_BLE>30
+    {
+      SWSerial.print("RSet");// receive duty
+      SWSerial.println(RX_Data_BLE);
+      
+      analogWrite(10,RX_Data_BLE);
+      analogWrite(9,RX_Data_BLE) ;
+      
+      MtorIsMoving=true;
+      duty=RX_Data_BLE;
+      duty_set=RX_Data_BLE;
+    }  
+    if (RX_Data_BLE==1)
+    {
+      stopbyOther=true;
 //            stopbymyself=false; 
-            }
-          else if(RX_Data_BLE==0)
-          {
-            stopbyOther=false;
+    }
+    else if(RX_Data_BLE==0)
+    {
+      stopbyOther=false;
 //            stopbymyself=true;
-            }
-          SWSerial.print("RX");
-          SWSerial.println(RX_Data_BLE);
-        }
-        ///
-
-
-  
+    }
+    SWSerial.print("RX");
+    SWSerial.println(RX_Data_BLE);      
+  }
 }
-
+float absolute(float x)
+{
+  if (x>0)
+    return x;
+  else
+    return -x;
+}
 
 
 

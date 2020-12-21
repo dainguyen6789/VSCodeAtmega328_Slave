@@ -172,8 +172,8 @@ int RX_Data_BLE=2;
 //============================
 //For Fastest Speed;
 //============================
-float AccelMagThreshold=1,RoCh,RoChThreshold=8;// Rate of Accel change
-const int NumSamplesToSetZero=2;
+float AccelMagThreshold=2,RoCh,RoChThreshold=8;// Rate of Accel change
+const int NumSamplesToSetZero=5;
 
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
@@ -749,28 +749,28 @@ void loop() {
         AVAWorld.z= (float) aaWorld.z*9.81/2048.0;
 
         if(run1==1)
+        {
+          // analogWrite(10,70);
+          // analogWrite(9,70);  
+          // delay(250);                  
+          // analogWrite(10,75);
+          // analogWrite(9,75);   
+          // delay(500);                    
+          // analogWrite(10,80);
+          // analogWrite(9,80);
+          // delay(250);   
+          // analogWrite(10,90);
+          // analogWrite(9,90);
+          if (absolute(AVAWorld.x)<AccelMagThreshold)
           {
-//                    analogWrite(10,70);
-//                    analogWrite(9,70);  
-//                    delay(250);                  
-//                    analogWrite(10,75);
-//                    analogWrite(9,75);   
-//                    delay(500);                    
-//                    analogWrite(10,80);
-//                    analogWrite(9,80);
-//                    delay(250);   
-//                    analogWrite(10,90);
-//                    analogWrite(9,90);
-              if (absolute(AVAWorld.x)<AccelMagThreshold)
-              {
-                AVAWorldMagSeries[NumSamplesToSetZero-1]=0;
-              }
-              else
-              {
-                AVAWorldMagSeries[NumSamplesToSetZero-1]= absolute(AVAWorld.x); 
-              }
-              time1=sample_time;
-              run1++;
+            AVAWorldMagSeries[NumSamplesToSetZero-1]=0;
+          }
+          else
+          {
+            AVAWorldMagSeries[NumSamplesToSetZero-1]= absolute(AVAWorld.x); 
+          }
+          time1=sample_time;
+          run1++;
           }
         else
         {
@@ -819,9 +819,9 @@ void loop() {
           spd[1].x=0;
           spd[1].y=0;
           spd[1].z=0;   
-//                          AVAWorld.x=0;
-//                          AVAWorld.y=0;
-//                          AVAWorld.z=0; 
+          // AVAWorld.x=0;
+          // AVAWorld.y=0;
+          // AVAWorld.z=0; 
           peak_speed=0;                       
         }
                   

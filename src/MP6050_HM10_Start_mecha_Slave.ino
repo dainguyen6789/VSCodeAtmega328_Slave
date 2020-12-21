@@ -496,7 +496,7 @@ void setup() {
       //analogWrite(10, 0);
     
     
-       pinMode(9, OUTPUT);
+      pinMode(9, OUTPUT);
       //analogWrite(10, 0);
       setPwmFrequency(9, 8);           //  3921.16 Hz
       //analogWrite(10, 0);
@@ -569,9 +569,9 @@ void setup() {
 
     // load and configure the DMP
     SWSerial.println(F("Initializing DMP..."));
-//            mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_4);
-//            DEBUG_PRINTLN(F("Setting accelerometer sensitivity to +/- 4..."));
-//            I2Cdev::writeByte(0x68, MPU6050_RA_ACCEL_CONFIG, 0x01);
+    // mpu.setFullScaleAccelRange(MPU6050_ACCEL_FS_4);
+    // DEBUG_PRINTLN(F("Setting accelerometer sensitivity to +/- 4..."));
+    // I2Cdev::writeByte(0x68, MPU6050_RA_ACCEL_CONFIG, 0x01);
 
     devStatus = mpu.dmpInitialize();
     
@@ -585,21 +585,21 @@ void setup() {
     mpu.setFullScaleAccelRange(2);  //0 = +/- 2g | 1 = +/- 4g | 2 = +/- 8g | 3 =  +/- 16g 
     #endif
 
-/*
-Sensor readings with offsets:  5 4 16383 1 0 0
-Your offsets: -1036 -2044 851 19  -13 -23
+    /*
+    Sensor readings with offsets:  5 4 16383 1 0 0
+    Your offsets: -1036 -2044 851 19  -13 -23
 
-Data is printed as: acelX acelY acelZ giroX giroY giroZ
-*/
+    Data is printed as: acelX acelY acelZ giroX giroY giroZ
+    */
 
     // supply your own gyro offsets here, scaled for min sensitivity
-    mpu.setXGyroOffset(28);
-    mpu.setYGyroOffset(-11);
-    mpu.setZGyroOffset(-19);
+    mpu.setXGyroOffset(153);
+    mpu.setYGyroOffset(-13);
+    mpu.setZGyroOffset(44);
 
-    mpu.setXAccelOffset(-1036);
-    mpu.setYAccelOffset(-2044);
-    mpu.setZAccelOffset(417); 
+    mpu.setXAccelOffset(-1437);
+    mpu.setYAccelOffset(512);
+    mpu.setZAccelOffset(962); 
 
     //    make sure it worked (returns 0 if so)
     //
@@ -679,10 +679,10 @@ void loop() {
 
     // check for overflow (this should never happen unless our code is too inefficient)
     if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
-        // reset so we can continue cleanly
-        mpu.resetFIFO();
-        //delay(200);
-        SWSerial.println(F("FIFO overflow!"));
+      // reset so we can continue cleanly
+      mpu.resetFIFO();
+      //delay(200);
+      SWSerial.println(F("FIFO overflow!"));
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
     } 
@@ -848,25 +848,29 @@ void loop() {
         //  one sample =0; then we have 4 samples !=0 => begin the step 
         if (Old_Spds[0].x==0 && Old_Spds[1].x!=0 && Old_Spds[2].x!=0 && Old_Spds[3].x!=0 & spd[1].x!=0)
         {
-//                          SWSerial.print("Here,");
+          // SWSerial.print("Here,");
           SWSerial.print(spd[0].x);
           SWSerial.println(spd[1].x);
           step_start_time=sample_time;
         }
 //
-        if (absolute(spd[1].x)>0.8)                    // this condition to prevent the wrong peak value after reset peak_speed
-        peak_speed=max(peak_speed,absolute(spd[1].x)); // we have to use our own absolute function because built-in abs() returns int value
+        if (absolute(spd[1].x)>0.8)                    // this condition to prevent the wrong peak value after reset 
+        // peak_speed
+        peak_speed=max(peak_speed,absolute(spd[1].x)); // we have to use our own absolute function because 
+        // built-in abs() returns int value
                   
-                  //==================================================================//
-                  //        CATCH PEAK SPEED VALUES
-                  //        Modify the code to detect the peak of 4 steps
-                  //        current speed < previous speed  that means we finish with the 1st peak
-                  //==================================================================//  
-                  //==================================================================//    
-                    
-                  // peak_speed>0.5 to prevent the small negative value at the beginning of foot step .
-                  // absolute(spd[1].x)==0 before the condition j==n_reset is met, then we can't reset the temp var "peak_speed".
-        if (absolute(spd[1].x) < peak_speed && peak_speed>0.5 && absolute(spd[1].x)!=0 ) //the value is going down and the acceleration is zero.
+        //==================================================================//
+        //        CATCH PEAK SPEED VALUES
+        //        Modify the code to detect the peak of 4 steps
+        //        current speed < previous speed  that means we finish with the 1st peak
+        //==================================================================//  
+        //==================================================================//    
+          
+        // peak_speed>0.5 to prevent the small negative value at the beginning of foot step .
+        // absolute(spd[1].x)==0 before the condition j==n_reset is met, then we can't reset 
+        // the temp var "peak_speed".
+        if (absolute(spd[1].x) < peak_speed && peak_speed>0.5 && absolute(spd[1].x)!=0 ) //the value is 
+        // going down and the acceleration is zero.
         {
                         
           if (!j)// j==0
@@ -878,8 +882,8 @@ void loop() {
             SWSerial.println(half_step_time);
             adapttomyself=true;
             Serial.write(TXAdaptedSignal);// TXAdaptedSignal=2, we can choose any encoded value
-//                                Serial.write(TXAdaptedSignal);// TXAdaptedSignal=2, we can choose any encoded value
-//                                Serial.write(TXAdaptedSignal);// TXAdaptedSignal=2, we can choose any encoded value   
+            // Serial.write(TXAdaptedSignal);// TXAdaptedSignal=2, we can choose any encoded value
+            // Serial.write(TXAdaptedSignal);// TXAdaptedSignal=2, we can choose any encoded value   
             
             peak_speeds[0]=peak_speeds[1];
             peak_speeds[1]=peak_speeds[2];
@@ -896,9 +900,9 @@ void loop() {
             {
               //send bluetooth data
               Serial.write((byte)0x00);
-//                                  Serial.write((byte)0x00);
-//                                  Serial.write((byte)0x00);
-//                                  SWSerial.println("Se1");
+              // Serial.write((byte)0x00);
+              // Serial.write((byte)0x00);
+              // SWSerial.println("Se1");
             }
             else if(ratio<turnoff_Ratio && ratio>0)
             {
@@ -945,35 +949,25 @@ void loop() {
         }
 
 
-//                        spd[0].x=abs(spd[1].x);
+        //spd[0].x=abs(spd[1].x);
 
         //==================================================================//
         //==============              SWSerial Print           ===============//
-        //==================================================================//  
+        //==================================================================//
+        SWSerial.print(millis()); 
+        SWSerial.print(","); 
+
         SWSerial.print(AVAWorld.x); 
         SWSerial.print(",");             
-        SWSerial.println(spd[1].x);
-//                        SWSerial.print(spd[1].x);
-//                        SWSerial.print(",");
-//                        SWSerial.print(peak_speeds[0]);
-//                        SWSerial.print(",");
-//                        SWSerial.print(peak_speeds[1]);
-//                        SWSerial.print(",");
-//                        SWSerial.print(peak_speeds[2]);
-//                        SWSerial.print(",");
-//                        SWSerial.print(peak_speeds[3]); 
-//                        SWSerial.print(",");
-//                        SWSerial.println(peak_speeds[4]);                         
-//                        SWSerial.print(peak_speeds[3]);                         
-//                        SWSerial.print(",");
-//                        SWSerial.print(AVAWorld.x); 
-//                        SWSerial.print("");
-//                        SWSerial.print(AVAWorld.y); 
-//                        SWSerial.print(",");
-//                        SWSerial.println(AVAWorld.z); 
-          //==================================================================//
-          //                    CODE FOR SECURITY 
-          //==================================================================// 
+        SWSerial.print(AVAWorld.z);
+        SWSerial.print(",");             
+
+        SWSerial.print(spd[1].x);   
+        SWSerial.print(",");             
+        SWSerial.println(spd[1].z);
+        //==================================================================//
+        //                    CODE FOR SECURITY 
+        //==================================================================// 
         if(millis()-pilot_send_time>300) // send pilot signal every 300ms
         {
           pilot_send_time=millis();
@@ -983,11 +977,11 @@ void loop() {
         }
                                           
                   
-        }
+      }
       //==================================================================//
       //==============       BLE SoftwareSWSerial Print      ===============//
       //==================================================================//  
-//            Serial.println(AVAWorld.x);
+      //            Serial.println(AVAWorld.x);
       #endif
 
     }
@@ -998,8 +992,9 @@ void loop() {
         //  RX_Data_BLE==1: slave ratio <turnoff_Ratio
     if((ratio<turnoff_Ratio))  // Stop by myself
     {
-//          half_step_time=step_peak_time-step_start_time;
-//          duty=90*peak_speeds[4]*(step_peak_time+half_step_time-sample_time)/(half_step_time); // the motor speed will proportional to the peak foot speed
+      //          half_step_time=step_peak_time-step_start_time;
+      //          duty=90*peak_speeds[4]*(step_peak_time+half_step_time-sample_time)/(half_step_time); 
+      // the motor speed will proportional to the peak foot speed
       if(step_peak_time+half_step_time>sample_time)
       {
         gradualStopDuty=duty*(step_peak_time+half_step_time-sample_time)/(half_step_time);
@@ -1025,27 +1020,29 @@ void loop() {
         analogWrite(9,RX_Data_BLE);
       }
     }        
-         //===================================================================================
-         ///  ADAPT THE SPEED BY MYSELF and SEND THE SIGNAL TO OTHER MODULE
-         //=================================================================================== 
+      //===================================================================================
+      ///  ADAPT THE SPEED BY MYSELF and SEND THE SIGNAL TO OTHER MODULE
+      //=================================================================================== 
     if(millis()-pilot_receive_time<650)
     {
-      if(adapttomyself && !stopbyOther && ratio >turnoff_Ratio && MtorIsMoving) // MtorIsMoving is used to isolate this code from 1st foot step
+      if(adapttomyself && !stopbyOther && ratio >turnoff_Ratio && MtorIsMoving) // MtorIsMoving is used 
+      // to isolate this code from 1st foot step
       {
         new_duty=motor_duty(peak_speeds[4]);
         SWSerial.println(duty_set);
         // Decrease/increase the speed
-        if(duty_set<safe_duty_threshold && (sample_time-step_peak_time) <= half_step_time/2)//decrease upto the "new_duty" value
+        if(duty_set<safe_duty_threshold && (sample_time-step_peak_time) <= half_step_time/2)//decrease upto the 
+        // "new_duty" value
         {
           duty_set=(int)(duty+(new_duty-duty)*(sample_time-step_peak_time)/(half_step_time/2));
           SWSerial.print("ds");
           SWSerial.println(duty_set);
-//                SWSerial.println(new_duty);
-//                SWSerial.println(duty);
-//                SWSerial.println(sample_time);
-//                SWSerial.println(step_peak_time);
-//                SWSerial.println(half_step_time);
-          Serial.write(duty_set);                                         // signal the Slave to decrease speed
+          //                SWSerial.println(new_duty);
+          //                SWSerial.println(duty);
+          //                SWSerial.println(sample_time);
+          //                SWSerial.println(step_peak_time);
+          //                SWSerial.println(half_step_time);
+          Serial.write(duty_set);// signal the Slave to decrease speed
           analogWrite(10,duty_set);
           analogWrite(9,duty_set);
         }
@@ -1111,7 +1108,7 @@ void serialEvent()
     else if(RX_Data_BLE==0)
     {
       stopbyOther=false;
-//            stopbymyself=true;
+      //stopbymyself=true;
     }
     SWSerial.print("RX");
     SWSerial.println(RX_Data_BLE);      

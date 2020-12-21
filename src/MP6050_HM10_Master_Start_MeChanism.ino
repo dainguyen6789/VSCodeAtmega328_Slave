@@ -535,13 +535,13 @@ void setup()
   // supply your own gyro offsets here, scaled for min sensitivity
   // Older and Smaller MUP6050
 
-  mpu.setXGyroOffset(26);
-  mpu.setYGyroOffset(-7);
-  mpu.setZGyroOffset(-23);
+  mpu.setXGyroOffset(27);
+  mpu.setYGyroOffset(-1);
+  mpu.setZGyroOffset(-21);
   
   mpu.setXAccelOffset(-1150);
   mpu.setYAccelOffset(-2239);
-  mpu.setZAccelOffset(800);
+  mpu.setZAccelOffset(830);
 // Sensor readings with offsets:	-4	-7	16382	0	0	0
 // Your offsets:	2183	-1557	921	51	15	19
 

@@ -178,7 +178,7 @@ int longterm_sumaccel_loop_variable=0;
 //For Fastest Speed;
 //============================
 float AccelMagThreshold=1,RoCh,RoChThreshold=8;// Rate of Accel change
-const int NumSamplesToSetZero=5;
+const int NumSamplesToSetZero=2;
 
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
@@ -691,16 +691,15 @@ void loop() {
 
           // save old world accel value to compute the rate of change
           
-          AVAWorld1.x= AVAWorld.x;
-          AVAWorld1.y= AVAWorld.x;
-          AVAWorld1.z= AVAWorld.z;
+          // AVAWorld1.x= AVAWorld.x;
+          // AVAWorld1.y= AVAWorld.x;
+          // AVAWorld1.z= AVAWorld.z;
           
           // current value of  world accel
           
           AVAWorld.x= (float) aaWorld.x*9.81/2048.0;
           AVAWorld.y= (float) aaWorld.y*9.81/2048.0;
           AVAWorld.z= (float) aaWorld.z*9.81/2048.0;
-          
           // Reset the accel to zero if it is small 
           // Store the "NumSamplesToSetZero" valued=s of acceleration, if they are all zeros, 
           // we will reset the speed to zero
@@ -717,6 +716,9 @@ void loop() {
             if (absolute(AVAWorld.x)+absolute(AVAWorld.y)+absolute(AVAWorld.z)<AccelMagThreshold)
             {
               AVAWorldMagSeries[NumSamplesToSetZero-1]=0;
+              // AVAWorld.x=0;
+              // AVAWorld.y=0;
+              // AVAWorld.z=0;
             }
             else
             {
@@ -735,6 +737,9 @@ void loop() {
             if (absolute(AVAWorld.x)+absolute(AVAWorld.y)+absolute(AVAWorld.z)<AccelMagThreshold)
             {
               AVAWorldMagSeries[NumSamplesToSetZero-1]=0;
+              AVAWorld.x=0;
+              AVAWorld.y=0;
+              AVAWorld.z=0;
             }
             else
             {

@@ -177,7 +177,7 @@ int longterm_sumaccel_loop_variable=0;
 //============================
 //For Fastest Speed;
 //============================
-float AccelMagThreshold=1,RoCh,RoChThreshold=8;// Rate of Accel change
+float AccelMagThreshold=1.5,RoCh,RoChThreshold=8;// Rate of Accel change
 const int NumSamplesToSetZero=2;
 
 // orientation/motion vars

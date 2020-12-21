@@ -798,6 +798,8 @@ void loop() {
           // Use the speed_calc to calculate the user speed from the acceleration
           speed_calc(&spd[1],AVAWorld, delta_t);
           //======================================================
+          // This code is used to reset initial noise on Z Axis 
+          //======================================================
           prev_speed=absolute(Old_Spds[3].x) + absolute(Old_Spds[3].y)+absolute(Old_Spds[3].z); 
           if(prev_speed>10)
           {            
@@ -890,9 +892,9 @@ void loop() {
                   {
                     //send data by bluetooth
                     Serial.write(1);
-//                                    Serial.write(1);
-//                                    Serial.write(1);
-//                                    SWSerial.println("Se2M");
+                    // Serial.write(1);
+                    // Serial.write(1);
+                    // SWSerial.println("Se2M");
                   }
 
             }

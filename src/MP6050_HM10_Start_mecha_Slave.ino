@@ -136,7 +136,7 @@ SoftwareSerial SWSerial(7, 8); // RX, TX
 
 //---------------------------------------------------------------------
 int fadeAmount = 5,duty,gradualStopDuty,new_duty,duty_set;     // how many points to fade the LED by
-int startup_safe_duty=90, turnoff_threshold=30, safe_duty_threshold=110;
+int startup_safe_duty=90, turnoff_threshold=30, safe_duty_threshold=110,non_stop_threshold=85;
 int num_loop=0,motor_init,second_step_init;
 int brightness = 55;    // how bright the LED is
 //---------------------------------------------------------------------
@@ -937,6 +937,7 @@ void loop() {
           }
           if(duty>turnoff_threshold)
           {
+            duty=duty>=non_stop_threshold?duty:non_stop_threshold;
             analogWrite(10,duty);// pin number, duty
             analogWrite(9,duty) ;
             Serial.write(duty);
@@ -1042,6 +1043,7 @@ void loop() {
           //                SWSerial.println(sample_time);
           //                SWSerial.println(step_peak_time);
           //                SWSerial.println(half_step_time);
+          duty_set=(int)(duty+(new_duty-duty)*(sample_time-step_peak_time)/(half_step_time/2));
           Serial.write(duty_set);// signal the Slave to decrease speed
           analogWrite(10,duty_set);
           analogWrite(9,duty_set);
